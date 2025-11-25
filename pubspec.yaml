@@ -1,0 +1,30 @@
+name: currency_app
+description: A minimalist offline currency converter.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State management (from your specs)
+  flutter_riverpod: ^2.4.9
+  # Local storage (from your specs)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  # HTTP client (for later)
+  http: ^1.1.2
+  google_mobile_ads: ^5.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  # Code generators for Hive
+  build_runner: ^2.4.8
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true
