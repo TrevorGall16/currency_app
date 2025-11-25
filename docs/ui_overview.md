@@ -1,790 +1,180 @@
-\# Offline Currency Cards – UI \& UX Wireframes Document
+# Offline Currency Cards – UI & UX Wireframes (Based on Mockup)
 
+## 1. Design Principles
 
-
-\## 1. Design Principles
-
-
-
-\* Minimalist and ultra-fast
-
-\* One-hand usability
-
-\* Large touch targets
-
-\* Zero-wait interactions
-
-\* Offline-first with subtle online enhancements (charts)
-
-\* Ads placed without harming ergonomics
-
-
+* Clean, minimal, practical — mirroring your mockup’s simplicity.
+* Fast interactions with almost no delays.
+* One-hand usability.
+* Layout built around stacked cards + clear top controls.
+* Offline-first with optional online features (chart).
+* Ads placed in a non-intrusive way.
 
 ---
 
+## 2. Global Layout Guidelines
 
-
-\## 2. Color \& Typography Guidelines
-
-
-
-\*\*Primary color:\*\* Deep blue-gray
-
-
-
-\*\*Accent color:\*\* Bright cyan (for conversion highlights)
-
-\# Offline Currency Cards – UI \& UX Wireframes Document
-
-
-
-\## 1. Design Principles
-
-
-
-\* Minimalist and ultra-fast
-
-\* One-hand usability
-
-\* Large touch targets
-
-\* Zero-wait interactions
-
-\* Offline-first with subtle online enhancements (charts)
-
-\* Ads placed without harming ergonomics
-
-
+* **Margins:** ~16 px screen edges
+* **Card spacing:** ~8–12 px vertically
+* **Card padding:** ~12 px internal
+* **Tap target minimum:** 44 px
+* **Typography:** Large numeric emphasis
+* **Colors:** Not defined by mockup → Neutral placeholders
 
 ---
 
-
-
-\## 2. Color \& Typography Guidelines
-
-
-
-\*\*Primary color:\*\* Deep blue-gray
-
-
-
-\*\*Accent color:\*\* Bright cyan (for conversion highlights)
-
-
-
-\*\*Typography:\*\*
-
-
-
-\* Title: 20–22 px, semi-bold
-
-\* Section labels: 14–16 px
-
-\* Numbers: 24–30 px, mono-spaced for stability
-
-
-
-\*\*Spacing:\*\*
-
-
-
-\* Minimum 12 px padding
-
-\* 16–20 px between major sections
-
-
-
----
-
-
-
-\## 3. Screen-by-Screen Wireframes
-
-
-
-\### \*\*A. Home Screen (Main Overview)\*\*
-
-
+## 3. Home Screen (Main Screen)
 
 ```
+┌─────────────────────────────────────────────┐
+│  Home Currency Picker       Refresh Icon    │
+│  [ EUR ▼ ]                  ( ↻ )           │
+├─────────────────────────────────────────────┤
+│  ┌──────────── Card ────────────┐           │
+│  │ 100 THB → 2.59 EUR            │           │
+│  └───────────────────────────────┘           │
+│  ┌──────────── Card ────────────┐           │
+│  │ 500 JPY → 3.30 EUR            │           │
+│  └───────────────────────────────┘           │
+│  ... more cards ...                          │
+│                                               │
+│               + Add Card                      │
+├─────────────────────────────────────────────┤
+│                 Banner Ad                     │
+└─────────────────────────────────────────────┘
+```
 
+### Notes
+
+* Home currency selector is placed at the very top, as in your mockup.
+* Refresh icon is on the right for quick manual updates.
+* Cards follow your stacked layout.
+* Only **one** banner ad at the bottom (from your mockup).
+* Card tap → opens detail screen.
+* Long press → optional reorder/delete.
+
+---
+
+## 4. Add Card Screen
+
+```
 ┌────────────────────────────────┐
-
-│ \[Home Currency Selector ▼]     │
-
+│ ← Back       Add New Card       │
 ├────────────────────────────────┤
-
-│   CARD LIST                    │
-
-│  ┌──────────────────────────┐  │
-
-│  │ 100 THB → 2.59 EUR       │  │
-
-│  │  \[precision note]        │  │
-
-│  └──────────────────────────┘  │
-
-│  ┌──────────────────────────┐  │
-
-│  │  200 THB → 5.18 EUR      │  │
-
-│  │  \[updated x days ago]    │  │
-
-│  └──────────────────────────┘  │
-
-│                                │
-
-│ + Add Card Button              │
-
-├────────────────────────────────┤
-
-│ Inline Ad 1 (Top Banner)       │
-
-│ Inline Ad 2 (Bottom Banner)    │
-
+│ Amount:   [  100   ]            │
+│ Currency: [  THB ▼ ]            │
+│                                   │
+│ Preview: 100 THB → 2.59 EUR       │
+│                                   │
+│           [   Save Card   ]       │
 └────────────────────────────────┘
-
 ```
 
+### Notes
 
-
-\*\*Notes:\*\*
-
-
-
-\* Tap on a card → open detail screen
-
-\* Long press → reorder or delete card
-
-\* Pull-to-refresh when online
-
-
+* Layout is minimalist, following your mockup’s simplicity.
+* Preview updates instantly.
 
 ---
 
-
-
-\### \*\*B. Add Card Screen\*\*
-
-
+## 5. Card Detail Screen
 
 ```
+┌──────────────────────────────────┐
+│ ← Back     100 THB → 2.59 EUR    │
+├──────────────────────────────────┤
+│ Last updated: 24 Nov 2025        │
+│                                  │
+│   ─── Chart (online only) ───     │
+│  |   mini line chart area       | │
+│  |   (7d/30d toggle optional)   | │
+│                                  │
+│ [Edit Card]     [Delete]          │
+└──────────────────────────────────┘
+```
 
+### Notes
+
+* If offline → message “Chart unavailable (offline)”.
+* Matches your mockup structure with a simple stacked layout.
+
+---
+
+## 6. Settings Screen
+
+```
 ┌────────────────────────────────┐
-
-│  \[Back]   Add Card             │
-
+│ ← Back        Settings          │
 ├────────────────────────────────┤
-
-│  Amount Input: \[   100   ]     │
-
-│  Currency Picker: \[ THB ▼ ]    │
-
-│                                │
-
-│  Preview: 100 THB → 2.59 EUR   │
-
-│                                │
-
-│         \[ Add Card ]           │
-
+│ Home Currency       [ EUR ▼ ]    │
+│ Manual Refresh       [ Button ]   │
+│ Auto Sync Rates      [ Toggle ]   │
+│ Offline Mode Badge (if needed)    │
+│                                   │
+│ About / Version Info              │
 └────────────────────────────────┘
-
 ```
-
-
-
-\*\*UX Notes:\*\*
-
-
-
-\* Amount input uses large number pad
-
-\* Live updated preview
-
-
 
 ---
 
+## 7. Offline Indicator
 
+* Small tag near top/right.
+* Appears when device is offline.
+* Hides automatically once reconnected.
 
-\### \*\*C. Card Detail Screen\*\*
-
-
-
-```
-
-┌────────────────────────────────┐
-
-│ \[Back]   100 THB               │
-
-├────────────────────────────────┤
-
-│  100 THB = 2.59 EUR            │
-
-│  Updated: 3 days ago           │
-
-│                                │
-
-│  ── CHART (when online) ──     │
-
-│  |        small chart        | │
-
-│  |   7d / 30d toggle         | │
-
-│                                │
-
-│  \[Edit Card]   \[Delete]        │
-
-└────────────────────────────────┘
+Example:
 
 ```
-
-
-
-\*\*Notes:\*\*
-
-
-
-\* Chart loads only if online
-
-\* Otherwise display: "No internet. Chart unavailable."
-
-
+[Offline]
+```
 
 ---
 
+## 8. Widgets
 
-
-\### \*\*D. Settings Screen\*\*
-
-
+### One-Card Widget
 
 ```
-
-┌────────────────────────────────┐
-
-│ \[Back] Settings                │
-
-├────────────────────────────────┤
-
-│  Home Currency     \[ EUR ▼ ]   │
-
-│  Refresh Rates     \[ Manual ]  │
-
-│  Auto-sync         \[ Toggle ]  │
-
-│                                │
-
-│  About / Privacy                │
-
-│  Rate the App                  │
-
-└────────────────────────────────┘
-
-```
-
-
-
----
-
-
-
-\### \*\*E. Offline Mode Indicator\*\*
-
-
-
-```
-
-\[Offline] gray tag near top right
-
-```
-
-
-
----
-
-
-
-\## 4. Widget Wireframes
-
-
-
-\### \*\*Widget: 1-card layout\*\*
-
-
-
-```
-
 ┌──────────────────────────────┐
-
-│ 100 THB → 2.59 EUR           │
-
-│ Updated 3d ago               │
-
+│ 100 THB → 2.59 EUR            │
+│ Updated: 3 days ago           │
 └──────────────────────────────┘
-
 ```
 
-
-
-\### \*\*Widget: 3-card layout\*\*
-
-
+### Three-Card Widget
 
 ```
-
 ┌──────────────────────────────┐
-
-│ 100 THB → 2.59 EUR           │
-
-│ 200 THB → 5.18 EUR           │
-
-│ 500 JPY → 3.05 EUR           │
-
-│ Updated: 3d ago              │
-
+│ 100 THB → 2.59 EUR            │
+│ 200 JPY → 1.45 EUR             │
+│ 50 CNY → 6.70 EUR              │
+│ Updated: 3 days ago            │
 └──────────────────────────────┘
-
 ```
-
-
-
-\*\*Widget Interaction:\*\*
-
-
-
-\* Tap → opens app Home
-
-\* Force refresh when online
-
-
 
 ---
 
+## 9. Components
 
-
-\## 5. Ad Placement Overview
-
-
-
-\* \*\*Main Screen:\*\* 2 inline banners stacked
-
-\* \*\*Settings / Add Card / Detail:\*\* No ads
-
-\* \*\*Widget:\*\* No ads
-
-
-
-Ads never interrupt the card list.
-
-
+* Currency picker (top of home)
+* Refresh icon
+* Card tile
+* Add card button
+* Chart area
+* Offline badge
+* Bottom banner ad
+* Edit/delete buttons
 
 ---
 
+## 10. Interactions & Behaviors
 
-
-\## 6. Micro-Interactions
-
-
-
-\* Smooth fade when rates refresh
-
-\* Haptic tick when adding a card
-
-\* Pull-to-refresh bounce
-
-\* Offline badge animates in/out
-
-
+* Tap card → detail page
+* Long press → optional reorder/delete
+* Pull-to-refresh → updates rates if online
+* New card animates into list
+* Offline badge fades in/out
 
 ---
 
-
-
-\## 7. Component Inventory
-
-
-
-\* Currency Picker
-
-\* Card Tile
-
-\* Chart Tile
-
-\* Add Button
-
-\* Inline Ads
-
-\* Widgets (1-card, 3-card)
-
-\* Offline Badge
-
-
-
----
-
-
-
-If you'd like, I can produce a separate high-fidelity mockup style (color blocks, layout spacing, etc.).
-
-
-
-\*\*Typography:\*\*
-
-
-
-\* Title: 20–22 px, semi-bold
-
-\* Section labels: 14–16 px
-
-\* Numbers: 24–30 px, mono-spaced for stability
-
-
-
-\*\*Spacing:\*\*
-
-
-
-\* Minimum 12 px padding
-
-\* 16–20 px between major sections
-
-
-
----
-
-
-
-\## 3. Screen-by-Screen Wireframes
-
-
-
-\### \*\*A. Home Screen (Main Overview)\*\*
-
-
-
-```
-
-┌────────────────────────────────┐
-
-│ \[Home Currency Selector ▼]     │
-
-├────────────────────────────────┤
-
-│   CARD LIST                    │
-
-│  ┌──────────────────────────┐  │
-
-│  │ 100 THB → 2.59 EUR       │  │
-
-│  │  \[precision note]        │  │
-
-│  └──────────────────────────┘  │
-
-│  ┌──────────────────────────┐  │
-
-│  │  200 THB → 5.18 EUR      │  │
-
-│  │  \[updated x days ago]    │  │
-
-│  └──────────────────────────┘  │
-
-│                                │
-
-│ + Add Card Button              │
-
-├────────────────────────────────┤
-
-│ Inline Ad 1 (Top Banner)       │
-
-│ Inline Ad 2 (Bottom Banner)    │
-
-└────────────────────────────────┘
-
-```
-
-
-
-\*\*Notes:\*\*
-
-
-
-\* Tap on a card → open detail screen
-
-\* Long press → reorder or delete card
-
-\* Pull-to-refresh when online
-
-
-
----
-
-
-
-\### \*\*B. Add Card Screen\*\*
-
-
-
-```
-
-┌────────────────────────────────┐
-
-│  \[Back]   Add Card             │
-
-├────────────────────────────────┤
-
-│  Amount Input: \[   100   ]     │
-
-│  Currency Picker: \[ THB ▼ ]    │
-
-│                                │
-
-│  Preview: 100 THB → 2.59 EUR   │
-
-│                                │
-
-│         \[ Add Card ]           │
-
-└────────────────────────────────┘
-
-```
-
-
-
-\*\*UX Notes:\*\*
-
-
-
-\* Amount input uses large number pad
-
-\* Live updated preview
-
-
-
----
-
-
-
-\### \*\*C. Card Detail Screen\*\*
-
-
-
-```
-
-┌────────────────────────────────┐
-
-│ \[Back]   100 THB               │
-
-├────────────────────────────────┤
-
-│  100 THB = 2.59 EUR            │
-
-│  Updated: 3 days ago           │
-
-│                                │
-
-│  ── CHART (when online) ──     │
-
-│  |        small chart        | │
-
-│  |   7d / 30d toggle         | │
-
-│                                │
-
-│  \[Edit Card]   \[Delete]        │
-
-└────────────────────────────────┘
-
-```
-
-
-
-\*\*Notes:\*\*
-
-
-
-\* Chart loads only if online
-
-\* Otherwise display: "No internet. Chart unavailable."
-
-
-
----
-
-
-
-\### \*\*D. Settings Screen\*\*
-
-
-
-```
-
-┌────────────────────────────────┐
-
-│ \[Back] Settings                │
-
-├────────────────────────────────┤
-
-│  Home Currency     \[ EUR ▼ ]   │
-
-│  Refresh Rates     \[ Manual ]  │
-
-│  Auto-sync         \[ Toggle ]  │
-
-│                                │
-
-│  About / Privacy                │
-
-│  Rate the App                  │
-
-└────────────────────────────────┘
-
-```
-
-
-
----
-
-
-
-\### \*\*E. Offline Mode Indicator\*\*
-
-
-
-```
-
-\[Offline] gray tag near top right
-
-```
-
-
-
----
-
-
-
-\## 4. Widget Wireframes
-
-
-
-\### \*\*Widget: 1-card layout\*\*
-
-
-
-```
-
-┌──────────────────────────────┐
-
-│ 100 THB → 2.59 EUR           │
-
-│ Updated 3d ago               │
-
-└──────────────────────────────┘
-
-```
-
-
-
-\### \*\*Widget: 3-card layout\*\*
-
-
-
-```
-
-┌──────────────────────────────┐
-
-│ 100 THB → 2.59 EUR           │
-
-│ 200 THB → 5.18 EUR           │
-
-│ 500 JPY → 3.05 EUR           │
-
-│ Updated: 3d ago              │
-
-└──────────────────────────────┘
-
-```
-
-
-
-\*\*Widget Interaction:\*\*
-
-
-
-\* Tap → opens app Home
-
-\* Force refresh when online
-
-
-
----
-
-
-
-\## 5. Ad Placement Overview
-
-
-
-\* \*\*Main Screen:\*\* 2 inline banners stacked
-
-\* \*\*Settings / Add Card / Detail:\*\* No ads
-
-\* \*\*Widget:\*\* No ads
-
-
-
-Ads never interrupt the card list.
-
-
-
----
-
-
-
-\## 6. Micro-Interactions
-
-
-
-\* Smooth fade when rates refresh
-
-\* Haptic tick when adding a card
-
-\* Pull-to-refresh bounce
-
-\* Offline badge animates in/out
-
-
-
----
-
-
-
-\## 7. Component Inventory
-
-
-
-\* Currency Picker
-
-\* Card Tile
-
-\* Chart Tile
-
-\* Add Button
-
-\* Inline Ads
-
-\* Widgets (1-card, 3-card)
-
-\* Offline Badge
-
-
-
----
-
-
-
-If you'd like, I can produce a separate high-fidelity mockup style (color blocks, layout spacing, etc.).
-
-
-
+This UI spec now fully reflects the structure seen in your mockup image — simple, stacked, and ultra-practical.
