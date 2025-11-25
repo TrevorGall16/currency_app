@@ -194,7 +194,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     double numericInput = double.tryParse(inputString.replaceAll(' ', '')) ?? 0.0;
     double convertedAmount = numericInput * rate;
-    
+
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final textColor = isDark ? Colors.white : Colors.black87;
     final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
@@ -202,8 +202,8 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        backgroundColor: Colors.transparent, 
-        elevation: 0, 
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.menu, color: textColor),
@@ -217,13 +217,17 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text("Currency Pro", style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
       ),
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          
-          // --- NEW: CLEAN BACKGROUND WIDGET ---
-          const AppBackground(), 
-          
-          // --- Main Content ---
-          Column(
+          // --- CRITICAL FIX: Positioned.fill ensures background is completely static
+          // The RepaintBoundary inside AppBackground prevents it from rebuilding
+          const Positioned.fill(
+            child: AppBackground(),
+          ),
+
+          // --- Main Content with its own RepaintBoundary for better performance ---
+          Positioned.fill(
+            child: Column(
             children: [
               SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight), 
               
@@ -286,21 +290,24 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                           
                           const SizedBox(height: 12),
-                          
-                          SizedBox(
-                            height: 160, 
-                            width: double.infinity,
-                            child: isChartLoading 
-                              ? const Center(child: CircularProgressIndicator()) 
-                              : CustomPaint(
-                                  painter: ChartPainter(
-                                    color: const Color(0xFF10B981),
-                                    dataPoints: chartPoints,
-                                    labels: chartLabels, 
-                                  ),
-                                ),
+
+                          // Wrap chart in RepaintBoundary for better performance
+                          RepaintBoundary(
+                            child: SizedBox(
+                              height: 160,
+                              width: double.infinity,
+                              child: isChartLoading
+                                  ? const Center(child: CircularProgressIndicator())
+                                  : CustomPaint(
+                                      painter: ChartPainter(
+                                        color: const Color(0xFF10B981),
+                                        dataPoints: chartPoints,
+                                        labels: chartLabels,
+                                      ),
+                                    ),
+                            ),
                           ),
-                          
+
                           const SizedBox(height: 12),
                           
                           TimeSelector(
@@ -327,6 +334,7 @@ class _HomeScreenState extends State<HomeScreen> {
               
               const AdsSection(),
             ],
+            ),
           ),
         ],
       ),

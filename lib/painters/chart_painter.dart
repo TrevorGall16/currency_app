@@ -117,6 +117,29 @@ class ChartPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant ChartPainter oldDelegate) => 
-      oldDelegate.dataPoints != dataPoints || oldDelegate.labels != labels;
+  bool shouldRepaint(covariant ChartPainter oldDelegate) {
+    // Only repaint if data actually changed
+    if (oldDelegate.dataPoints.length != dataPoints.length) return true;
+    if (oldDelegate.labels.length != labels.length) return true;
+
+    for (int i = 0; i < dataPoints.length; i++) {
+      if (oldDelegate.dataPoints[i] != dataPoints[i]) return true;
+    }
+
+    return false;
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    if (other is! ChartPainter) return false;
+    if (other.dataPoints.length != dataPoints.length) return false;
+    for (int i = 0; i < dataPoints.length; i++) {
+      if (other.dataPoints[i] != dataPoints[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(dataPoints);
 }
