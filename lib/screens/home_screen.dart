@@ -225,11 +225,11 @@ class _HomeScreenState extends State<HomeScreen> {
             child: AppBackground(),
           ),
 
-          // --- Main Content with its own RepaintBoundary for better performance ---
+          // --- Main Content ---
           Positioned.fill(
             child: Column(
-            children: [
-              SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight), 
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight), 
               
               Expanded(
                 child: RefreshIndicator(
@@ -332,8 +332,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               
-              const AdsSection(),
-            ],
+                const AdsSection(),
+              ],
             ),
           ),
         ],
