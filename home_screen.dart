@@ -1,0 +1,346 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart'; 
+import 'package:hive_flutter/hive_flutter.dart';
+import 'dart:math'; 
+import '../utils/currency_utils.dart';
+import '../services/api_service.dart';
+import '../painters/chart_painter.dart';
+import '../widgets/currency_card.dart';
+import '../widgets/currency_search_modal.dart';
+import '../widgets/time_selector.dart';
+// import '../widgets/ads_section.dart'; // Commented out for debugging
+import '../widgets/chart_header.dart';
+import '../widgets/app_background.dart';
+import 'settings_screen.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  String fromCurrency = 'USD';
+  String toCurrency = 'EUR';
+  double rate = 0.0; 
+  String inputString = "1000"; 
+  
+  String selectedPeriod = '1M';
+  List<double> chartPoints = [];
+  List<String> chartLabels = [];
+  bool isChartLoading = false;
+  DateTime lastUpdated = DateTime.now();
+
+  final List<String> periods = ['5D', '1M', '6M', '1Y', '5Y'];
+  final List<String> currencies = [
+    'USD', 'EUR', 'THB', 'JPY', 'GBP', 'CNY', 'SGD', 'AUD', 'CAD', 'CHF', 'HKD', 'KRW',
+    'INR', 'BRL', 'RUB', 'ZAR', 'MXN', 'TRY', 'NZD', 'SEK'
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedState(initialLoad: true);
+  }
+
+  void _loadSavedState({bool initialLoad = false}) {
+    final box = Hive.box('settings');
+    setState(() {
+      if (initialLoad) {
+        fromCurrency = box.get('fromCurrency') ?? box.get('default_from', defaultValue: 'USD');
+      } else {
+        String newDefault = box.get('default_from', defaultValue: 'USD');
+        if (fromCurrency != newDefault) fromCurrency = newDefault;
+      }
+      
+      toCurrency = box.get('toCurrency', defaultValue: 'EUR');
+      inputString = box.get('inputString', defaultValue: "1000");
+      
+      double? cachedRate = box.get('rate_${fromCurrency}_$toCurrency');
+      if (cachedRate != null) rate = cachedRate;
+    });
+    _updateRate(save: false);
+  }
+
+  void _saveState() {
+    final box = Hive.box('settings');
+    box.put('fromCurrency', fromCurrency);
+    box.put('toCurrency', toCurrency);
+    box.put('inputString', inputString); 
+  }
+
+  String _formatSmart(double value) {
+    if (value == 0) return "0.00";
+    if (value < 1.0) return value.toStringAsFixed(4);
+    return value.toStringAsFixed(2);
+  }
+
+  Future<void> _updateRate({bool save = true}) async {
+    final box = Hive.box('settings');
+    final cacheKey = 'rate_${fromCurrency}_$toCurrency';
+    double? cachedRate = box.get(cacheKey);
+    if (cachedRate != null) setState(() => rate = cachedRate);
+    else setState(() => rate = CurrencyUtils.getFallbackRate(fromCurrency, toCurrency));
+    if (save) _saveState();
+    double? liveRate = await ApiService.getRate(fromCurrency, toCurrency);
+    if (liveRate != null) {
+      if (mounted) { setState(() { rate = liveRate; lastUpdated = DateTime.now(); }); }
+      box.put(cacheKey, liveRate);
+    }
+    _fetchChartData();
+  }
+
+  Future<void> _fetchChartData() async {
+    setState(() => isChartLoading = true);
+    final historyData = await ApiService.getHistory(fromCurrency, toCurrency, selectedPeriod);
+    List<double> points = [];
+    List<String> newLabels = [];
+    if (historyData != null && historyData.isNotEmpty) {
+      final sortedKeys = historyData.keys.toList()..sort();
+      for (var dateStr in sortedKeys) {
+        final rateMap = historyData[dateStr] as Map<String, dynamic>;
+        points.add((rateMap[toCurrency] as num).toDouble());
+      }
+      if (points.isNotEmpty) {
+         final int count = sortedKeys.length;
+         List<int> labelIndices = [0, (count * 0.25).round(), (count * 0.5).round(), (count * 0.75).round(), count - 1];
+         labelIndices = labelIndices.toSet().toList()..sort();
+         labelIndices = labelIndices.where((i) => i < count).toList();
+         for (int i in labelIndices) {
+           DateTime d = DateTime.parse(sortedKeys[i]);
+           String label = (selectedPeriod == '5Y' || selectedPeriod == '1Y') 
+               ? "${d.month.toString().padLeft(2,'0')}/${d.year.toString().substring(2)}" : "${d.month.toString().padLeft(2,'0')}/${d.day.toString().padLeft(2,'0')}";
+           newLabels.add(label);
+         }
+      }
+    } else {
+      _generateSimulatedChart();
+      return;
+    }
+    if (mounted) setState(() { chartPoints = points; chartLabels = newLabels; isChartLoading = false; });
+  }
+
+  void _generateSimulatedChart() {
+    final random = Random();
+    List<double> points = [];
+    List<String> labels = ['Start', 'Mid', 'End'];
+    double current = rate > 0 ? rate : 1.0;
+    for (int i = 0; i < 20; i++) {
+      double change = (random.nextDouble() - 0.5) * 0.01; 
+      current = current * (1 + change);
+      points.add(current);
+    }
+    if (mounted) setState(() { chartPoints = points; chartLabels = labels; isChartLoading = false; });
+  }
+
+  void _openSearchablePicker(bool isFrom) {
+    HapticFeedback.selectionClick();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => DraggableScrollableSheet(
+        initialChildSize: 0.7, minChildSize: 0.5, maxChildSize: 0.9, expand: false,
+        builder: (_, controller) {
+          return CurrencySearchModal(
+            scrollController: controller, 
+            currencies: currencies,
+            onSelect: (code) {
+              HapticFeedback.lightImpact();
+              setState(() {
+                if (isFrom) fromCurrency = code; else toCurrency = code;
+                final box = Hive.box('settings');
+                final cacheKey = 'rate_${fromCurrency}_$toCurrency';
+                double? cachedRate = box.get(cacheKey);
+                rate = cachedRate ?? CurrencyUtils.getFallbackRate(fromCurrency, toCurrency);
+                _updateRate(save: true);
+              });
+              Navigator.pop(context);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSwapButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor, 
+        shape: BoxShape.circle,
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.swap_vert, color: Color(0xFF1976D2)),
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          setState(() {
+            final temp = fromCurrency; fromCurrency = toCurrency; toCurrency = temp;
+            rate = 1 / rate;
+            _updateRate(save: true);
+          });
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    double numericInput = double.tryParse(inputString.replaceAll(' ', '')) ?? 0.0;
+    double convertedAmount = numericInput * rate;
+    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textColor = isDark ? Colors.white : Colors.black87;
+    final bool isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
+    return GestureDetector(
+      onTap: () {
+        FocusManager.instance.primaryFocus?.unfocus();
+      },
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent, 
+          elevation: 0, 
+          centerTitle: true,
+          leading: IconButton(
+            icon: Icon(Icons.menu, color: textColor),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              ).then((_) => _loadSavedState(initialLoad: false));
+            },
+          ),
+          title: Text("Currency Pro", style: TextStyle(color: textColor, fontWeight: FontWeight.bold)),
+        ),
+        body: Stack(
+          children: [
+            const AppBackground(), 
+            Column(
+              children: [
+                SizedBox(height: MediaQuery.of(context).padding.top + kToolbarHeight), 
+                
+                Expanded(
+                    child: SingleChildScrollView(
+    physics: const ClampingScrollPhysics(),
+                    onRefresh: () async {
+                      HapticFeedback.mediumImpact();
+                      await _updateRate(save: true);
+                    },
+                    color: const Color(0xFF10B981),
+                    child: SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                      child: Column(
+                        children: [
+                          CurrencyCard(
+                            label: "From",
+                            currencyCode: fromCurrency,
+                            amount: inputString,
+                            isInput: true,
+                            onFlagTap: () => _openSearchablePicker(true),
+                            onAmountChanged: (val) {
+                              setState(() {
+                                inputString = val;
+                                _saveState();
+                              });
+                            },
+                          ),
+                          
+                          const SizedBox(height: 4),
+                          _buildSwapButton(),
+                          const SizedBox(height: 4),
+
+                          GestureDetector(
+                            onLongPress: () {
+                              Clipboard.setData(ClipboardData(text: _formatSmart(convertedAmount)));
+                              HapticFeedback.mediumImpact();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                 const SnackBar(content: Text("Copied Result!"), duration: Duration(milliseconds: 800))
+                              );
+                            },
+                            child: CurrencyCard(
+                              label: "To",
+                              currencyCode: toCurrency,
+                              amount: _formatSmart(convertedAmount),
+                              isInput: false,
+                              onFlagTap: () => _openSearchablePicker(false),
+                            ),
+                          ),
+
+                          if (!isKeyboardOpen) ...[
+                            const SizedBox(height: 20),
+
+                            ChartHeader(
+                              fromCurrency: fromCurrency,
+                              toCurrency: toCurrency,
+                              rate: rate,
+                              lastUpdated: lastUpdated,
+                              isLive: !chartPoints.isEmpty,
+                            ),
+                            
+                            const SizedBox(height: 12),
+                            
+                            SizedBox(
+                              height: 160, 
+                              width: double.infinity,
+                              child: isChartLoading 
+                                ? const Center(child: CircularProgressIndicator()) 
+                                : CustomPaint(
+                                    painter: ChartPainter(
+                                      color: const Color(0xFF10B981),
+                                      dataPoints: chartPoints,
+                                      labels: chartLabels, 
+                                    ),
+                                  ),
+                            ),
+                            
+                            const SizedBox(height: 12),
+                            
+                            TimeSelector(
+                              periods: periods, 
+                              selectedPeriod: selectedPeriod, 
+                              onPeriodSelected: (p) {
+                                HapticFeedback.selectionClick();
+                                setState(() {
+                                  selectedPeriod = p;
+                                  _fetchChartData();
+                                });
+                              }
+                            ),
+                            
+                            const SizedBox(height: 20),
+                          ] else ...[
+                            const SizedBox(height: 10), 
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                
+                // --- DEBUGGING PLACEHOLDER FOR AD BANNER ---
+                SafeArea(
+                  top: false, 
+                  child: Container(
+                    height: 60,
+                    width: double.infinity,
+                    color: Colors.red.withOpacity(0.5), // Red box to see where ad goes
+                    alignment: Alignment.center,
+                    child: const Text(
+                      "Banner Ad Position", 
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
