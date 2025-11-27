@@ -42,6 +42,12 @@ class _CurrencyCardState extends State<CurrencyCard> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final symbol = CurrencyUtils.getCurrencySymbol(widget.currencyCode);
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -57,8 +63,7 @@ class _CurrencyCardState extends State<CurrencyCard> {
       decoration: BoxDecoration(
         color: cardColor,
         gradient: CurrencyUtils.getFlagGradient(widget.currencyCode),
-        borderRadius: BorderRadius.circular(20), // More rounded for modern look
-        // --- NEW: WHITE OUTLINE (Glassmorphism feel) ---
+        borderRadius: BorderRadius.circular(20), 
         border: Border.all(
           color: Colors.white.withOpacity(0.25),
           width: 1.5,
@@ -74,16 +79,39 @@ class _CurrencyCardState extends State<CurrencyCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            widget.label.toUpperCase(), 
-            style: TextStyle(
-              color: labelColor, 
-              fontSize: 11, 
-              fontWeight: FontWeight.w600, 
-              letterSpacing: 1.0
-            )
+          // --- VISUAL SETTING: LABEL TEXT (FROM / TO) ---
+          // If you want to change the outline color, change Colors.white below.
+          // If you want to change the text fill color, change Colors.black below.
+          Stack(
+            children: [
+              // 1. The Outline (Stroke) - Currently White, 4px thick
+              Text(
+                widget.label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                  foreground: Paint()
+                    ..style = PaintingStyle.stroke
+                    ..strokeWidth = 1 // Increased from 3 to 4 for better visibility
+                    ..color = Colors.white,
+                ),
+              ),
+              // 2. The Fill (Solid) - Currently Black
+              Text(
+                widget.label.toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.0,
+                  color: Colors.black,
+                ),
+              ),
+            ],
           ),
+          
           const SizedBox(height: 8),
+          
           Row(
             children: [
               // Flag & Code Pill
@@ -134,17 +162,34 @@ class _CurrencyCardState extends State<CurrencyCard> {
                   child: widget.isInput
                       ? TextField(
                           controller: _controller,
+                          onTap: () {
+                            _controller.clear(); 
+                            if (widget.onAmountChanged != null) {
+                              widget.onAmountChanged!(''); 
+                            }
+                          },
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor),
+                          textAlignVertical: TextAlignVertical.center,
+                          style: TextStyle(
+                            fontSize: 22, 
+                            fontWeight: FontWeight.bold, 
+                            color: textColor,
+                            height: 1.0, 
+                          ),
+                          cursorColor: textColor,
                           decoration: InputDecoration(
                             border: InputBorder.none,
                             hintText: "0",
                             isDense: true,
                             contentPadding: EdgeInsets.zero,
-                            // --- CHANGED: Prefix instead of Suffix for consistency ---
                             prefixText: "$symbol ", 
-                            prefixStyle: const TextStyle(color: Colors.white70, fontSize: 22, fontWeight: FontWeight.w300),
+                            prefixStyle: const TextStyle(
+                              color: Colors.white70, 
+                              fontSize: 22, 
+                              fontWeight: FontWeight.w300,
+                              height: 1.0
+                            ),
                           ),
                           onChanged: (val) {
                             String raw = val.replaceAll(' ', '');
@@ -164,7 +209,6 @@ class _CurrencyCardState extends State<CurrencyCard> {
                           textAlign: TextAlign.center,
                           text: TextSpan(
                             children: [
-                              // --- CHANGED: Symbol First ---
                               TextSpan(
                                 text: "$symbol ",
                                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w300, color: Colors.white70),

@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import '../utils/currency_utils.dart';
 
 class ChartHeader extends StatelessWidget {
   final String fromCurrency;
   final String toCurrency;
   final double rate;
   final DateTime lastUpdated;
-  final bool isLive; // To show "Live" vs "Cached"
+  final bool isLive; // Kept to prevent errors in parent widget, even if unused visually now
 
   const ChartHeader({
     super.key,
@@ -19,49 +18,35 @@ class ChartHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Format: "2025-11-25"
-    final dateStr = "${lastUpdated.year}-${lastUpdated.month.toString().padLeft(2,'0')}-${lastUpdated.day.toString().padLeft(2,'0')}";
-    
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final color = isDark ? Colors.white : Colors.black87;
+
+    // Simple date formatting helper
+    String dateStr = "${lastUpdated.day.toString().padLeft(2,'0')}/${lastUpdated.month.toString().padLeft(2,'0')}/${lastUpdated.year}";
+
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(children: [
-           Text("1 ${CurrencyUtils.getCurrencyName(fromCurrency)} equals", style: TextStyle(color: Colors.grey[600]))
-        ]),
-        const SizedBox(height: 4),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Text(rate.toStringAsFixed(4), style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 6),
-            Text(CurrencyUtils.getCurrencyName(toCurrency), style: TextStyle(fontSize: 20, color: Colors.grey[600])),
-          ],
+        // 1. Main Rate
+        Text(
+          "1 $fromCurrency = ${rate.toStringAsFixed(4)} $toCurrency",
+          style: TextStyle(
+            color: color,
+            fontSize: 24, 
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
         ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Text(
-              "Last updated: $dateStr · ", 
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            // Live/Offline Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                color: isLive ? Colors.green.withOpacity(0.1) : Colors.grey.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                isLive ? "Live Data" : "Offline Cache",
-                style: TextStyle(
-                  color: isLive ? Colors.green : Colors.grey,
-                  fontSize: 10, 
-                  fontWeight: FontWeight.bold
-                ),
-              ),
-            ),
-          ],
+        
+        const SizedBox(height: 8),
+
+        // 2. "As of" Date (Replaces the "Live Market Rate" indicator)
+        Text(
+          "As of $dateStr",
+          style: TextStyle(
+            color: color.withOpacity(0.4),
+            fontSize: 12,
+            fontWeight: FontWeight.w400,
+          ),
         ),
       ],
     );

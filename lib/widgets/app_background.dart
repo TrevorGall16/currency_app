@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
-/// A fully static, visually appealing background that never rebuilds.
-/// Wrapped in RepaintBoundary to prevent unnecessary repaints.
 class AppBackground extends StatelessWidget {
   const AppBackground({super.key});
 
@@ -10,105 +8,159 @@ class AppBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Wrap in RepaintBoundary to completely isolate from parent rebuilds
-    return RepaintBoundary(
-      child: Container(
-        decoration: BoxDecoration(
-          // Modern, smooth gradient background
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    const Color(0xFF1a1a2e), // Deep navy blue
-                    const Color(0xFF16213e), // Dark blue
-                    const Color(0xFF0f3460), // Rich blue
-                  ]
-                : [
-                    const Color(0xFFF0F4F8), // Soft gray-blue
-                    const Color(0xFFE8EDF2), // Light blue-gray
-                    const Color(0xFFFFFFFF), // Pure white
-                  ],
-            stops: const [0.0, 0.5, 1.0],
+    // View.of(context) gets the physical screen size to prevent keyboard shifts
+    final view = View.of(context);
+    final double fixedHeight = view.physicalSize.height / view.devicePixelRatio;
+    final double fixedWidth = view.physicalSize.width / view.devicePixelRatio;
+
+    // --- SETTING: BACKGROUND GRADIENT COLORS ---
+    final Color topGradient = isDark
+        ? const Color(0xFF16191F)   // Dark Mode Top Color
+        : const Color(0xFFF3F3F3);  // Light Mode Top Color
+
+    final Color baseColor = isDark
+        ? const Color(0xFF0E0F11)   // Dark Mode Bottom Color
+        : const Color(0xFFFFFFFF);  // Light Mode Bottom Color
+
+    // --- SETTING: HEXAGON LINE COLOR ---
+    final Color lineColor = isDark
+        ? const Color(0xFF8A8A8A)   // Dark Mode Line Color
+        : const Color(0xFF9E9E9E);  // Light Mode Line Color
+
+    return Stack(
+      children: [
+        Container(
+          height: double.infinity,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [topGradient, baseColor],
+              // --- SETTING: GRADIENT FADE POINT ---
+              // 0.6 means the top color fades into the bottom color at 60% down the screen
+              stops: const [0.0, 0.75], 
+            ),
           ),
         ),
-        // Optional: Add subtle pattern overlay
-        child: CustomPaint(
-          painter: ModernPatternPainter(
-            isDark: isDark,
+        RepaintBoundary(
+          child: CustomPaint(
+            size: Size(fixedWidth, fixedHeight),
+            painter: OptimizedHexPainter(
+              color: lineColor,
+              isDark: isDark,
+              fixedHeight: fixedHeight, 
+            ),
           ),
         ),
-      ),
+      ],
     );
   }
 }
 
-/// Modern, subtle pattern painter with dots/circles for visual interest
-/// Only paints once and never repaints due to shouldRepaint returning false
-class ModernPatternPainter extends CustomPainter {
+class OptimizedHexPainter extends CustomPainter {
+  final Color color;
   final bool isDark;
+  final double fixedHeight;
 
-  const ModernPatternPainter({required this.isDark});
+  OptimizedHexPainter({
+    required this.color,
+    required this.isDark,
+    required this.fixedHeight,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = isDark
-          ? Colors.white.withOpacity(0.03)
-          : Colors.black.withOpacity(0.02)
-      ..style = PaintingStyle.fill;
+    // --- SETTING: LINE THICKNESS ---
+    final Paint thinPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.95; // Thickness of the faint background hexagons
 
-    // Create a subtle dot pattern
-    const double spacing = 60.0;
-    const double dotRadius = 1.5;
+    final Paint thickPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5; // Thickness of the random "accent" hexagons
 
-    for (double x = 0; x < size.width; x += spacing) {
-      for (double y = 0; y < size.height; y += spacing) {
-        // Add slight randomness to make it more organic
-        final offsetX = (x ~/ spacing).isEven ? 0.0 : spacing / 2;
-        canvas.drawCircle(
-          Offset(x + offsetX, y),
-          dotRadius,
-          paint,
-        );
+    // --- SETTING: HEXAGON SIZE ---
+    // Increase this number (e.g., to 45.0) for larger hexagons
+    // Decrease this number (e.g., to 20.0) for smaller, denser hexagons
+    const double radius = 39.0; 
+
+    final double hexWidth = math.sqrt(3) * radius;
+    final double hexHeight = 2 * radius;
+    final double yDist = 0.75 * hexHeight;
+
+    int rows = (fixedHeight / yDist).ceil();
+    int cols = (size.width / hexWidth).ceil() + 1;
+
+    for (int row = 0; row < rows; row++) {
+      double normalizedY = (row * yDist) / fixedHeight;
+
+      // --- SETTING: VERTICAL CUTOFF ---
+      // 0.55 means hexagons stop drawing completely at 55% down the screen.
+      // Increase to 0.8 to draw them further down.
+      if (normalizedY > 0.75) break; 
+
+      for (int col = 0; col < cols; col++) {
+        double xOffset = (row % 2) * (hexWidth / 2);
+        double xPos = col * hexWidth + xOffset;
+        double yPos = row * yDist;
+
+        // --- SETTING: FADE OUT SPEED ---
+        // Controls how quickly they become transparent as they go down.
+        // 0.45 means they start fading immediately and vanish around 45% down.
+        double fadeLimit = 0.65; 
+        double opacity = (1.0 - (normalizedY / fadeLimit)).clamp(0.0, 1.0);
+
+        if (opacity <= 0.01) continue;
+
+        bool isThick = _isThickDeterministic(row, col);
+
+        // --- SETTING: OVERALL OPACITY / VISIBILITY ---
+        // These decimals (0.0 to 1.0) control how visible the lines are.
+        // Higher = More visible. Lower = More subtle.
+        double finalOpacity = isThick
+            ? (isDark ? 0.32 : 0.24) * opacity // Bold lines opacity (Dark : Light)
+            : (isDark ? 0.09 : 0.095) * opacity; // Thin lines opacity (Dark : Light)
+
+        final paint = isThick ? thickPaint : thinPaint;
+        paint.color = color.withOpacity(finalOpacity);
+
+        final path = _createHexPath(xPos, yPos, radius);
+        canvas.drawPath(path, paint);
       }
     }
+  }
 
-    // Add some subtle circular accents in corners for visual interest
-    final accentPaint = Paint()
-      ..color = isDark
-          ? Colors.white.withOpacity(0.01)
-          : Colors.black.withOpacity(0.01)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+  bool _isThickDeterministic(int row, int col) {
+    // This math ensures the pattern is random but stays the same every frame
+    int hash = (row * 73 + col * 19) % 100;
+    
+    // --- SETTING: AMOUNT OF BOLD HEXAGONS (DENSITY) ---
+    // hash goes from 0 to 99.
+    // > 85 means roughly 15% of hexagons are bold.
+    // Lower this number (e.g. > 50) to make MANY MORE bold hexagons.
+    // Raise this number (e.g. > 95) to make VERY FEW bold hexagons.
+    return hash > 68; 
+  }
 
-    // Top-left accent
-    canvas.drawCircle(
-      Offset(size.width * 0.1, size.height * 0.1),
-      size.width * 0.15,
-      accentPaint,
-    );
-
-    // Bottom-right accent
-    canvas.drawCircle(
-      Offset(size.width * 0.9, size.height * 0.85),
-      size.width * 0.2,
-      accentPaint,
-    );
+  Path _createHexPath(double x, double y, double radius) {
+    final path = Path();
+    for (int i = 0; i < 6; i++) {
+      double angle = (60 * i - 30) * (math.pi / 180);
+      double px = x + radius * math.cos(angle);
+      double py = y + radius * math.sin(angle);
+      if (i == 0) {
+        path.moveTo(px, py);
+      } else {
+        path.lineTo(px, py);
+      }
+    }
+    path.close();
+    return path;
   }
 
   @override
-  bool shouldRepaint(covariant ModernPatternPainter oldDelegate) {
-    // CRITICAL: Only repaint if theme changes (dark/light mode)
-    return isDark != oldDelegate.isDark;
+  bool shouldRepaint(covariant OptimizedHexPainter oldDelegate) {
+    return oldDelegate.isDark != isDark || oldDelegate.color != color;
   }
-
-  @override
-  bool operator ==(Object other) {
-    if (identical(this, other)) return true;
-    return other is ModernPatternPainter && other.isDark == isDark;
-  }
-
-  @override
-  int get hashCode => isDark.hashCode;
 }
