@@ -9,13 +9,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # State management (from your specs)
-  flutter_riverpod: ^2.4.9
-  # Local storage (from your specs)
+  # Local storage
   hive: ^2.2.3
   hive_flutter: ^1.1.0
-  # HTTP client (for later)
+  # HTTP client
   http: ^1.1.2
+  # Monetization
   google_mobile_ads: ^5.0.0
 
 dev_dependencies:

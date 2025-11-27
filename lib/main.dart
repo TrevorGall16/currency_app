@@ -10,19 +10,34 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Hive.initFlutter();
   Hive.registerAdapter(CurrencyCardAdapter());
-  
+
   await Hive.openBox<CurrencyCard>('currency_cards');
   await Hive.openBox('settings');
+
+  // Compact Hive databases on startup to prevent bloat
+  _compactHiveBoxes();
 
   // FIX: Do NOT await this. Let it load in the background.
   // This prevents the "White Screen" freeze on startup.
   if (!kIsWeb) {
-    MobileAds.instance.initialize(); 
+    MobileAds.instance.initialize();
   }
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   runApp(const MyApp());
+}
+
+/// Compact Hive databases to reclaim disk space
+/// Runs asynchronously without blocking app startup
+Future<void> _compactHiveBoxes() async {
+  try {
+    await Hive.box('settings').compact();
+    await Hive.box<CurrencyCard>('currency_cards').compact();
+  } catch (e) {
+    // Silent fail - compaction is optimization, not critical
+    print('Hive compaction warning: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {

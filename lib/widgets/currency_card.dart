@@ -42,6 +42,12 @@ class _CurrencyCardState extends State<CurrencyCard> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose(); // Fix memory leak - clean up controller
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final symbol = CurrencyUtils.getCurrencySymbol(widget.currencyCode);
     final isDark = Theme.of(context).brightness == Brightness.dark;

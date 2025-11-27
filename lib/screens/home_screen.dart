@@ -43,9 +43,51 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadSavedState(initialLoad: true);
+    _cleanupOldCachedRates(); // Clean up old cached rates on startup
   }
 
-  // ... [Keep _loadSavedState, _saveState, _formatSmart logic as is] ...
+  /// Cleanup old cached exchange rates to prevent indefinite data accumulation
+  /// Removes rates older than 7 days and limits total cached rates to 100
+  Future<void> _cleanupOldCachedRates() async {
+    final box = Hive.box('settings');
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final maxAge = const Duration(days: 7).inMilliseconds; // 7-day cache expiration
+
+    // Get all rate cache keys
+    final allKeys = box.keys.toList();
+    final rateKeys = allKeys.where((key) => key.toString().startsWith('rate_')).toList();
+
+    // Remove old rates based on timestamp
+    for (var key in rateKeys) {
+      final timestampKey = '${key}_timestamp';
+      final timestamp = box.get(timestampKey);
+
+      if (timestamp == null || (now - timestamp) > maxAge) {
+        // Delete expired rate
+        await box.delete(key);
+        await box.delete(timestampKey);
+      }
+    }
+
+    // Limit total number of cached rates to prevent bloat
+    final remainingKeys = box.keys.where((key) => key.toString().startsWith('rate_')).toList();
+    if (remainingKeys.length > 100) {
+      // Sort by timestamp (most recent first)
+      final keyTimestamps = <String, int>{};
+      for (var key in remainingKeys) {
+        keyTimestamps[key.toString()] = box.get('${key}_timestamp') ?? 0;
+      }
+
+      final sortedKeys = keyTimestamps.keys.toList()
+        ..sort((a, b) => keyTimestamps[b]!.compareTo(keyTimestamps[a]!));
+
+      // Delete oldest rates (keep only 100 most recent)
+      for (var i = 100; i < sortedKeys.length; i++) {
+        await box.delete(sortedKeys[i]);
+        await box.delete('${sortedKeys[i]}_timestamp');
+      }
+    }
+  }
 
   void _loadSavedState({bool initialLoad = false}) {
     final box = Hive.box('settings');
@@ -91,6 +133,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (liveRate != null) {
       if (mounted) { setState(() { rate = liveRate; lastUpdated = DateTime.now(); }); }
       box.put(cacheKey, liveRate);
+      // Store timestamp for cache expiration management
+      box.put('${cacheKey}_timestamp', DateTime.now().millisecondsSinceEpoch);
     }
     _fetchChartData();
   }
