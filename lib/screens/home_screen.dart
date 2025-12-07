@@ -137,8 +137,8 @@ class _HomeContentLayerState extends State<HomeContentLayer> {
   bool _isAdLoaded = false;
   // Using Google's Test Ad Units. Replace with your real Unit IDs in production.
   final String _adUnitId = Platform.isAndroid
-      ? 'ca-app-pub-8732422930809097/2155648792' // Android Test Banner
-      : 'cca-app-pub-8732422930809097/2711603444'; // iOS Test Banner
+      ? 'ca-app-pub-8732422930809097/2155648792' // Android  Banner
+      : 'ca-app-pub-8732422930809097/2711603444'; // iOS  Banner
 
   final List<String> periods = ['5D', '1M', '6M', '1Y', '5Y'];
   final List<String> currencies = [

@@ -1,63 +1,65 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart'; 
-import 'models/currency_card.dart'; 
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Hive.initFlutter();
-  Hive.registerAdapter(CurrencyCardAdapter());
   
-  await Hive.openBox<CurrencyCard>('currency_cards');
+  // Initialize Hive
+  await Hive.initFlutter();
+  
+  // Open Boxes
   await Hive.openBox('settings');
-
-  // FIX: Do NOT await this. Let it load in the background.
-  // This prevents the "White Screen" freeze on startup.
-  if (!kIsWeb) {
-    MobileAds.instance.initialize(); 
+  
+  // FIX: Run compaction to keep storage clean
+  // This removes "deleted" entries from the physical file so the app stays small
+  try {
+    await Hive.box('settings').compact();
+  } catch (e) {
+    debugPrint("Compaction failed (harmless): $e");
   }
 
-  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  // Initialize AdMob (Mobile only)
+  // We do not await this to prevent app freeze on startup
+  if (!kIsWeb) {
+    MobileAds.instance.initialize();
+  }
 
-  runApp(const MyApp());
+  // Lock orientation to portrait
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  runApp(const CurrencyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class CurrencyApp extends StatelessWidget {
+  const CurrencyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Currency Pro',
       debugShowCheckedModeBanner: false,
-      themeMode: ThemeMode.dark,
+      title: 'Currency Pro',
+      // MATCHES APP BACKGROUND
       theme: ThemeData(
+        useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF2F2F7), 
-        primaryColor: Colors.black,
-        cardColor: Colors.white, 
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFFF2F2F7),
-          elevation: 0,
-          foregroundColor: Colors.black,
-        ),
-        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
+        primaryColor: Colors.blue,
       ),
+      // MATCHES APP BACKGROUND (Dark Graphite)
       darkTheme: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: Colors.transparent, 
-        primaryColor: Colors.white,
-        cardColor: const Color(0xFF1C1C1E), 
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          foregroundColor: Colors.white,
-        ),
         useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0E0F11),
+        primaryColor: Colors.blue,
       ),
+      themeMode: ThemeMode.system,
       home: const HomeScreen(),
     );
   }
