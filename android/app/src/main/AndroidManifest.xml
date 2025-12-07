@@ -1,12 +1,13 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.currencypro_app">
     
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="Currency Pro"
+        android:label="CurrencyPro Converter"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="false"> <!-- FIX: Set to false for security (HTTPS only) -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -28,11 +29,13 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- AdMob App ID -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-8732422930809097~3980576795"/>
             
     </application>
+    
     <queries>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
