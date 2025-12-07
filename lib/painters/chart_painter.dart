@@ -5,7 +5,6 @@ class ChartPainter extends CustomPainter {
   final Color color;
   final List<double> dataPoints;
   final List<String> labels;
-  // OPTIMIZATION: Pre-calculated values to avoid math in the render loop
   final double minVal;
   final double maxVal;
 
@@ -21,11 +20,11 @@ class ChartPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (dataPoints.isEmpty) return;
 
-    // Reserve space at bottom for text
+    // Reserve space at the bottom for Text so it doesn't overlap with buttons
     const double textSpace = 24.0;
     final double chartHeight = size.height - textSpace; 
 
-    // 1. Setup Paints
+    // --- PAINTS ---
     final linePaint = Paint()
       ..color = color
       ..strokeWidth = 3.0 
@@ -38,6 +37,11 @@ class ChartPainter extends CustomPainter {
       ..strokeWidth = 1.0
       ..style = PaintingStyle.stroke;
 
+    final axisPaint = Paint() // Solid line for X-Axis
+      ..color = color.withOpacity(0.4) 
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
+
     final minorGridPaint = Paint()
       ..color = color.withOpacity(0.08)
       ..strokeWidth = 1.0
@@ -47,19 +51,23 @@ class ChartPainter extends CustomPainter {
       ..color = color.withOpacity(0.5)
       ..strokeWidth = 1.5
       ..style = PaintingStyle.stroke;
+      
+    final dotPaint = Paint() // Dots for data points
+      ..color = color
+      ..style = PaintingStyle.fill;
 
-    // 2. Normalization Logic (OPTIMIZED: Math removed from here)
+    // --- NORMALIZE & PATH ---
     final double range = maxVal - minVal == 0 ? 1 : maxVal - minVal;
-
     final path = Path();
     final double stepX = size.width / (dataPoints.length - 1);
 
-    // 3. Draw Path
     for (int i = 0; i < dataPoints.length; i++) {
       double normalizedY = (dataPoints[i] - minVal) / range;
+      // We map 0..1 to the chartHeight (minus padding)
       double drawArea = chartHeight * 0.8;
       double yPadding = chartHeight * 0.1;
       
+      // Flip Y because Canvas (0,0) is top-left
       double y = chartHeight - (normalizedY * drawArea + yPadding);
       double x = i * stepX;
 
@@ -68,9 +76,12 @@ class ChartPainter extends CustomPainter {
       } else {
         path.lineTo(x, y);
       }
+      
+      // Draw Small Dot at each point to improve readability
+      canvas.drawCircle(Offset(x, y), 2.5, dotPaint);
     }
 
-    // 4. Draw Shadow/Gradient
+    // --- DRAW SHADOW ---
     final Path fillPath = Path.from(path)
       ..lineTo(size.width, chartHeight)
       ..lineTo(0, chartHeight)
@@ -89,11 +100,16 @@ class ChartPainter extends CustomPainter {
     canvas.drawPath(fillPath, fillPaint);
     canvas.drawPath(path, linePaint);
 
-    // 5. Draw Grid, Ticks, and Labels
+    // --- DRAW X-AXIS LINE ---
+    // Draws a line at the bottom of the chart area
+    canvas.drawLine(Offset(0, chartHeight), Offset(size.width, chartHeight), axisPaint);
+
+    // --- GRID & LABELS ---
     if (labels.isNotEmpty) {
       int count = labels.length;
       List<double> labelXPositions = [];
 
+      // -- Draw Major Lines & Text --
       for (int i = 0; i < count; i++) {
         double xPos;
         if (count == 1) {
@@ -103,16 +119,24 @@ class ChartPainter extends CustomPainter {
         }
         labelXPositions.add(xPos);
 
+        // Vertical Grid Line
         canvas.drawLine(Offset(xPos, 0), Offset(xPos, chartHeight), gridPaint);
+        
+        // Bottom Tick
         canvas.drawLine(Offset(xPos, chartHeight), Offset(xPos, chartHeight + 5), tickPaint);
+        
+        // Text Label
         _drawText(canvas, labels[i], Offset(xPos, chartHeight + 8));
       }
 
+      // -- Draw Intermediate (Minor) Lines --
+      // We draw a line halfway between each major label for better scale
       for (int i = 0; i < labelXPositions.length - 1; i++) {
         double start = labelXPositions[i];
         double end = labelXPositions[i + 1];
         double mid = (start + end) / 2;
 
+        // Minor line: starts at 40% height down to bottom
         canvas.drawLine(Offset(mid, chartHeight * 0.4), Offset(mid, chartHeight), minorGridPaint);
         canvas.drawLine(Offset(mid, chartHeight), Offset(mid, chartHeight + 3), minorGridPaint);
       }
@@ -135,8 +159,10 @@ class ChartPainter extends CustomPainter {
     );
     textPainter.layout();
     
+    // Center the text horizontally
     double offsetX = pos.dx - (textPainter.width / 2);
     
+    // Clamp to edges so text doesn't get cut off
     if (offsetX < 0) offsetX = 0;
     if (offsetX + textPainter.width > canvas.getDestinationClipBounds().width) {
       offsetX = canvas.getDestinationClipBounds().width - textPainter.width;
@@ -147,9 +173,9 @@ class ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant ChartPainter oldDelegate) {
-    // Only repaint if the bounds or data actually change
     return oldDelegate.minVal != minVal || 
            oldDelegate.maxVal != maxVal ||
-           oldDelegate.dataPoints != dataPoints;
+           oldDelegate.dataPoints != dataPoints ||
+           oldDelegate.labels != labels;
   }
 }
