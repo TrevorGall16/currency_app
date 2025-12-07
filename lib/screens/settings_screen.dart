@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart'; 
+import 'package:google_mobile_ads/google_mobile_ads.dart'; // Import AdMob
 import '../utils/currency_utils.dart';
 import '../widgets/app_background.dart';
 
@@ -17,15 +18,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
   final Box settingsBox = Hive.box('settings');
   late String defaultCurrency;
 
+  // --- ADMOB STATE ---
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
+  
+  // Using your Real Unit IDs
+  final String _adUnitId = Platform.isAndroid
+      ? 'ca-app-pub-8732422930809097/2155648792' 
+      : 'ca-app-pub-8732422930809097/2711603444'; 
+
   @override
   void initState() {
     super.initState();
     defaultCurrency = settingsBox.get('default_from', defaultValue: 'USD');
+    _loadBannerAd();
   }
 
-  // --- PRIVACY POLICY LINK SECTION ---
+  @override
+  void dispose() {
+    _bannerAd?.dispose(); // Clean up ad to prevent memory leaks
+    super.dispose();
+  }
+
+  void _loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: _adUnitId,
+      request: const AdRequest(),
+      size: AdSize.banner,
+      listener: BannerAdListener(
+        onAdLoaded: (_) {
+          setState(() {
+            _isAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, err) {
+          debugPrint('Settings BannerAd failed to load: $err');
+          ad.dispose();
+          setState(() {
+            _isAdLoaded = false;
+          });
+        },
+      ),
+    )..load();
+  }
+
+  // --- PRIVACY POLICY LINK ---
   Future<void> _launchPrivacyPolicy() async {
-    // 1. PASTE YOUR GOOGLE DOC LINK INSIDE THE QUOTES BELOW:
+    // Your specific Google Doc Link
     const String yourLink = 'https://docs.google.com/document/d/1DjVQGE2OdD-FKqHKQyuPS0TyPKefsaPCg8yrgDObCrQ/edit?tab=t.0';
     
     final Uri url = Uri.parse(yourLink);
@@ -55,7 +94,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
           "SETTINGS", 
           style: TextStyle(
             color: textColor, 
-            fontFamily: Platform.isIOS ? 'Courier' : 'Roboto', 
             fontWeight: FontWeight.w700,
             fontSize: 17,
             letterSpacing: 1.0
@@ -74,86 +112,106 @@ class _SettingsScreenState extends State<SettingsScreen> {
         children: [
           const AppBackground(),
 
-          ListView(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
-              left: 16,
-              right: 16,
-              bottom: 40
-            ),
+          Column(
             children: [
-              _buildSectionHeader("Preferences"),
-              _buildSettingsGroup(
-                context,
-                children: [
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.currency_exchange,
-                    iconColor: Colors.orange,
-                    title: "Default Currency",
-                    subtitle: defaultCurrency,
-                    trailing: _buildCurrencyBadge(defaultCurrency, isDark),
-                    onTap: _showDefaultCurrencyPicker,
-                    showDivider: false,
+              // Expanded ListView takes up all available space above the ad
+              Expanded(
+                child: ListView(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + kToolbarHeight + 10,
+                    left: 16,
+                    right: 16,
+                    bottom: 20 // Reduced bottom padding since ad is below
                   ),
-                ],
+                  children: [
+                    _buildSectionHeader("Preferences"),
+                    _buildSettingsGroup(
+                      context,
+                      children: [
+                        _buildSettingsTile(
+                          context,
+                          icon: Icons.currency_exchange,
+                          iconColor: Colors.orange,
+                          title: "Default Currency",
+                          subtitle: defaultCurrency,
+                          trailing: _buildCurrencyBadge(defaultCurrency, isDark),
+                          onTap: _showDefaultCurrencyPicker,
+                          showDivider: false,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    _buildSectionHeader("Information"),
+                    _buildSettingsGroup(
+                      context,
+                      children: [
+                        _buildSettingsTile(
+                          context,
+                          icon: Icons.info_outline_rounded,
+                          iconColor: Colors.blueAccent,
+                          title: "Version",
+                          subtitle: "1.0.0 (Pro)",
+                          trailing: const SizedBox.shrink(), 
+                          onTap: () {}, 
+                        ),
+                        _buildSettingsTile(
+                          context,
+                          icon: Icons.cloud_sync_rounded,
+                          iconColor: Colors.purpleAccent,
+                          title: "Data Source",
+                          subtitle: "Frankfurter API",
+                          trailing: const SizedBox.shrink(),
+                          onTap: () {}, 
+                        ),
+                        _buildSettingsTile(
+                          context,
+                          icon: Icons.privacy_tip_outlined,
+                          iconColor: Colors.green,
+                          title: "Privacy Policy",
+                          subtitle: "Tap to view",
+                          onTap: _launchPrivacyPolicy,
+                          showDivider: false,
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    Center(
+                      child: Text(
+                        "Currency Pro © 2025",
+                        style: TextStyle(
+                          color: isDark ? Colors.white30 : Colors.black26,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          letterSpacing: 0.5
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ),
 
-              const SizedBox(height: 24),
-
-              _buildSectionHeader("Information"),
-              _buildSettingsGroup(
-                context,
-                children: [
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.info_outline_rounded,
-                    iconColor: Colors.blueAccent,
-                    title: "Version",
-                    subtitle: "1.0.0 (Pro)",
-                    trailing: const SizedBox.shrink(), 
-                    onTap: () {}, 
-                  ),
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.cloud_sync_rounded,
-                    iconColor: Colors.purpleAccent,
-                    title: "Data Source",
-                    subtitle: "Frankfurter API",
-                    trailing: const SizedBox.shrink(),
-                    onTap: () {}, 
-                  ),
-                  _buildSettingsTile(
-                    context,
-                    icon: Icons.privacy_tip_outlined,
-                    iconColor: Colors.green,
-                    title: "Privacy Policy",
-                    subtitle: "Tap to view",
-                    // Opens your Google Doc
-                    onTap: _launchPrivacyPolicy,
-                    showDivider: false,
-                  ),
-                ],
-              ),
-              
-              const SizedBox(height: 40),
-              Center(
-                child: Text(
-                  "Currency Pro © 2025",
-                  style: TextStyle(
-                    color: isDark ? Colors.white30 : Colors.black26,
-                    fontWeight: FontWeight.w500,
-                    fontSize: 12,
-                    letterSpacing: 0.5
+              // --- BOTTOM BANNER AD ---
+              if (_isAdLoaded && _bannerAd != null)
+                SafeArea(
+                  top: false, // Don't add padding at top of ad
+                  child: Container(
+                    alignment: Alignment.center,
+                    width: _bannerAd!.size.width.toDouble(),
+                    height: _bannerAd!.size.height.toDouble(),
+                    child: AdWidget(ad: _bannerAd!),
                   ),
                 ),
-              )
             ],
           ),
         ],
       ),
     );
   }
+
+  // --- WIDGET BUILDERS ---
 
   Widget _buildSectionHeader(String title) {
     return Padding(
