@@ -65,7 +65,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   // --- PRIVACY POLICY LINK ---
   Future<void> _launchPrivacyPolicy() async {
     // Your specific Google Doc Link
-    const String yourLink = 'https://docs.google.com/document/d/1DjVQGE2OdD-FKqHKQyuPS0TyPKefsaPCg8yrgDObCrQ/edit?tab=t.0';
+    const String yourLink = 'https://trevorgall16.github.io/CurrencyConvertPro_Support/';
     
     final Uri url = Uri.parse(yourLink);
     
