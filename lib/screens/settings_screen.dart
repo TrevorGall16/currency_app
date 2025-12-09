@@ -17,6 +17,7 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   final Box settingsBox = Hive.box('settings');
   late String defaultCurrency;
+  late bool isDarkMode; // State for the theme switch
 
   // --- ADMOB STATE ---
   BannerAd? _bannerAd;
@@ -31,6 +32,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     defaultCurrency = settingsBox.get('default_from', defaultValue: 'USD');
+    
+    // Initialize Theme State from Hive (default to false/Light if not set)
+    isDarkMode = settingsBox.get('isDark', defaultValue: true);
+
     _loadBannerAd();
   }
 
@@ -60,6 +65,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
         },
       ),
     )..load();
+  }
+
+  // --- THEME TOGGLE LOGIC ---
+  void _toggleTheme(bool value) {
+    setState(() {
+      isDarkMode = value;
+      settingsBox.put('isDark', value); // Saves to Hive, triggering main.dart rebuild
+    });
   }
 
   // --- PRIVACY POLICY LINK ---
@@ -124,6 +137,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     bottom: 20 // Reduced bottom padding since ad is below
                   ),
                   children: [
+                    // --- APPEARANCE SECTION ---
+                    _buildSectionHeader("Appearance"),
+                    _buildSettingsGroup(
+                      context,
+                      children: [
+                         _buildSettingsTile(
+                          context,
+                          icon: isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                          iconColor: isDarkMode ? Colors.indigoAccent : Colors.orange,
+                          title: "Dark Mode",
+                          subtitle: isDarkMode ? "On" : "Off",
+                          trailing: Switch.adaptive(
+                            value: isDarkMode,
+                            activeColor: Colors.indigoAccent,
+                            onChanged: _toggleTheme,
+                          ),
+                          onTap: () => _toggleTheme(!isDarkMode),
+                          showDivider: false,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // --- PREFERENCES SECTION ---
                     _buildSectionHeader("Preferences"),
                     _buildSettingsGroup(
                       context,
@@ -143,6 +181,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
                     const SizedBox(height: 24),
 
+                    // --- INFORMATION SECTION ---
                     _buildSectionHeader("Information"),
                     _buildSettingsGroup(
                       context,
@@ -171,6 +210,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           iconColor: Colors.green,
                           title: "Privacy Policy",
                           subtitle: "Tap to view",
+                          // FIXED: Added the required 'trailing' argument here
+                          trailing: Icon(
+                            Icons.chevron_right, 
+                            color: isDark ? Colors.white30 : Colors.black26, 
+                            size: 20
+                          ),
                           onTap: _launchPrivacyPolicy,
                           showDivider: false,
                         ),
@@ -257,7 +302,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required Color iconColor,
     required String title,
     required String subtitle,
-    Widget? trailing,
+    required Widget trailing, // This was the cause of the error
     required VoidCallback onTap,
     bool showDivider = true,
   }) {
@@ -291,7 +336,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               fontSize: 13
             )
           ),
-          trailing: trailing ?? Icon(Icons.chevron_right, color: isDark ? Colors.white30 : Colors.black26, size: 20),
+          trailing: trailing,
           onTap: onTap,
         ),
         if (showDivider)

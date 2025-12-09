@@ -5,7 +5,7 @@ class ChartHeader extends StatelessWidget {
   final String toCurrency;
   final double rate;
   final DateTime lastUpdated;
-  final bool isLive; // Kept to prevent errors in parent widget, even if unused visually now
+  final bool isLive;
 
   const ChartHeader({
     super.key,
@@ -19,33 +19,54 @@ class ChartHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final color = isDark ? Colors.white : Colors.black87;
+    
+    // Pro colors
+    final Color textColor = isDark ? Colors.white : Colors.black87;
+    final Color subTextColor = isDark ? Colors.white54 : Colors.black54;
 
-    // Simple date formatting helper
     String dateStr = "${lastUpdated.day.toString().padLeft(2,'0')}/${lastUpdated.month.toString().padLeft(2,'0')}/${lastUpdated.year}";
 
     return Column(
       children: [
-        // 1. Main Rate
-        Text(
-          "1 $fromCurrency = ${rate.toStringAsFixed(4)} $toCurrency",
-          style: TextStyle(
-            color: color,
-            fontSize: 24, 
-            fontWeight: FontWeight.bold,
-            letterSpacing: -0.5,
+        // The Rate Pill
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: RichText(
+            text: TextSpan(
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontSize: 16, // Much smaller and elegant
+                color: textColor,
+              ),
+              children: [
+                const TextSpan(text: "1 ", style: TextStyle(fontWeight: FontWeight.w400)),
+                TextSpan(text: fromCurrency, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const TextSpan(text: " = ", style: TextStyle(color: Colors.grey)),
+                TextSpan(
+                  text: rate.toStringAsFixed(4), 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17)
+                ),
+                const TextSpan(text: " "),
+                TextSpan(text: toCurrency, style: const TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
           ),
         ),
         
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
 
-        // 2. "As of" Date (Replaces the "Live Market Rate" indicator)
+        // Subtle Date Label
         Text(
           "As of $dateStr",
           style: TextStyle(
-            color: color.withOpacity(0.4),
-            fontSize: 12,
+            color: subTextColor,
+            fontSize: 11,
             fontWeight: FontWeight.w400,
+            letterSpacing: 0.5,
           ),
         ),
       ],

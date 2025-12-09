@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:app_tracking_transparency/app_tracking_transparency.dart'; // REQUIRED IMPORT
+import 'package:app_tracking_transparency/app_tracking_transparency.dart'; 
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:google_fonts/google_fonts.dart'; // REQUIRED IMPORT
 import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Hive
   await Hive.initFlutter();
   await Hive.openBox('settings');
   
@@ -19,7 +19,6 @@ void main() async {
     debugPrint("Compaction failed (harmless): $e");
   }
 
-  // Initialize AdMob (Mobile only)
   if (!kIsWeb) {
     MobileAds.instance.initialize();
   }
@@ -32,7 +31,6 @@ void main() async {
   runApp(const CurrencyApp());
 }
 
-// CHANGED TO STATEFUL WIDGET TO HANDLE POPUP
 class CurrencyApp extends StatefulWidget {
   const CurrencyApp({super.key});
 
@@ -45,16 +43,11 @@ class _CurrencyAppState extends State<CurrencyApp> {
   @override
   void initState() {
     super.initState();
-    // Call the popup function when app starts
     WidgetsBinding.instance.addPostFrameCallback((_) => initPlugin());
   }
 
-  // TRACKING POPUP LOGIC
   Future<void> initPlugin() async {
-    // 1. Wait 1 second to ensure the app is fully visible (Fixes Apple Rejection)
     await Future.delayed(const Duration(seconds: 1));
-
-    // 2. Request Permission
     try {
       final status = await AppTrackingTransparency.requestTrackingAuthorization();
       print("Tracking status: $status");
@@ -65,23 +58,45 @@ class _CurrencyAppState extends State<CurrencyApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Currency Pro',
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF3F3F3),
-        primaryColor: Colors.blue,
-      ),
-      darkTheme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF0E0F11),
-        primaryColor: Colors.blue,
-      ),
-      themeMode: ThemeMode.system,
-      home: const HomeScreen(),
+    return ValueListenableBuilder(
+      valueListenable: Hive.box('settings').listenable(),
+      builder: (context, box, widget) {
+        final bool isDark = box.get('isDark', defaultValue: true);
+
+        return MaterialApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Currency Pro',
+          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+          
+          // --- LIGHT THEME ---
+          theme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.light,
+            scaffoldBackgroundColor: const Color(0xFFF8FAFC), // Matches new background
+            primaryColor: Colors.blue,
+            // APPLY GLOBAL PROFESSIONAL FONT
+            textTheme: GoogleFonts.interTextTheme(ThemeData.light().textTheme),
+            appBarTheme: const AppBarTheme(
+              surfaceTintColor: Colors.transparent, // Removes weird scroll tint
+            ),
+          ),
+          
+          // --- DARK THEME ---
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            scaffoldBackgroundColor: const Color(0xFF020617), // Matches new background
+            primaryColor: Colors.blue,
+            // APPLY GLOBAL PROFESSIONAL FONT
+            textTheme: GoogleFonts.interTextTheme(ThemeData.dark().textTheme),
+             appBarTheme: const AppBarTheme(
+              surfaceTintColor: Colors.transparent,
+            ),
+          ),
+          
+          home: const HomeScreen(),
+        );
+      },
     );
   }
 }
