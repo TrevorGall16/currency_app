@@ -87,13 +87,13 @@ class _CurrencyCardState extends State<CurrencyCard> {
                 // Colored Ambient Glow
                 BoxShadow(
                   color: glowColor.withOpacity(0.25), // Increased opacity for prominence
-                  blurRadius: 10, // Big blur for "Atmosphere"
+                  blurRadius: 12, // Big blur for "Atmosphere"
                   spreadRadius: -5,
                   offset: const Offset(0, 10),
                 ),
                 // Deep Shadow for depth
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: const Color.fromARGB(73, 0, 0, 0).withOpacity(0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
